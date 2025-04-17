@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Login - PBL Activities</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }  
+
+        form {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        select, input {
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 2px solid green;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: rgb(83, 255, 83);
+        }
+
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            overflow-x: auto;
+        }
+
+        th, td {
+            border: 2px solid green;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #d4edda;
+        }
+
+        .form-section {
+            margin-left: 40px; /* left spacing */
+            overflow-x: auto;
+        }
+
+        .download-btn {
+            background-color: #9370db;
+            color: white;
+            padding: 10px 15px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .download-btn:hover {
+            background-color: #6a5acd;
+        }
+
+        @media screen and (max-width: 768px) {
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            th {
+                position: sticky;
+                top: 0;
+                background-color: #d4edda;
+            }
+        }
+        .nav-buttons a {
+            background-color: white;
+            color: rgb(94, 146, 244);
+            padding: 8px 16px;
+            margin-left: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.3s ease;
+        }
+        
+        .nav-buttons a:hover {
+            background-color: rgb(34, 34, 34);
+            color: white;
+        }
+    </style>
+    <script>
+        function loadDropdown(url, targetDropdown) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const dropdown = document.getElementById(targetDropdown);
+                    dropdown.innerHTML = '<option value="" disabled selected>Select</option>';
+                    data.forEach(item => {
+                        dropdown.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+                    });
+                    dropdown.disabled = false;
+                })
+                .catch(error => console.error("Error loading dropdown:", error));
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("academic_year").addEventListener("change", function () {
+                loadDropdown(`/get_schools/${this.value}/`, "school");
+            });
+            document.getElementById("school").addEventListener("change", function () {
+                loadDropdown(`/get_programs/${this.value}/`, "program");
+            });
+            document.getElementById("program").addEventListener("change", function () {
+                loadDropdown(`/get_facultys/${this.value}/`, "faculty");
+            });
+        });
+    </script>
+</head>
+<body>
+    <div style="display: flex; justify-content: space-between; align-items: center; background-color: rgb(97, 157, 237); padding: 20px;">
+        <h1 style="margin: 0; color: white;">Experiential Learning Activity</h1>
+        <div class="nav-buttons">
+            <a href="home">Home</a>
+            <a href='edit'>Edit</a>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="academic_year">Academic Year:</label>
+        <select name="academic_year" id="academic_year">
+            <option value="" disabled selected>Select</option>
+            {% for year in academic_years %}
+                <option value="{{ year.id }}">{{ year.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="school">School:</label>
+        <select name="school" id="school" disabled>
+            <option value="" disabled selected>Select</option>
+        </select>
+
+        <label for="program">Program:</label>
+        <select name="program" id="program" disabled>
+            <option value="" disabled selected>Select</option>
+        </select>
+
+        <label for="faculty">Faculty:</label>
+        <select name="faculty" id="faculty">
+            <option value="" disabled selected>Select</option>
+        </select>
+
+        <button type="submit">Download Report</button>
+    </form>
+
+    {% if filtered_activities %}
+    <div class="form-section">
+        <form method="GET" action="">
+            {% csrf_token %}
+            <h2 align="center">Experiential Learning Activity List</h2>
+            <div style="overflow-x:auto;">
+                <table>
+                    <tr>
+                        <th>Course</th>
+                        <th>Activity Name</th>
+                        <th>Other Activity Name</th>
+                        <th>Activity Description</th>
+                        <th>Activity Marks</th>
+                        <th>Activity opening Date</th>
+                        <th>Activity closing Date</th>
+                        <th>Activity Documents</th>
+                        <th>Submitted Documents</th>
+                        <th>Activity LMS Links</th>
+                    </tr>
+                    {% for activity in filtered_activities %}
+                    <tr>
+                        <td>{{ activity.program }}</td>
+                        <td>{{ activity.pbl }}</td>
+                        <td>{{ activity.other_activity|default_if_none:"N/A" }}</td>
+                        <td>{{ activity.description }}</td>
+                        <td>{{ activity.marks }}</td>
+                        <td>{{ activity.opening_date}}</td>
+                        <td>{{ activity.closing_date }}</td>
+                        <td>
+                            {% if activity.activitydocument %}
+                                <a href="{{ activity.activitydocument.url }}" target="_blank">Document</a>
+                            {% else %}
+                                No Document
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if activity.document_upload_1 %}
+                                <a href="{{ activity.document_upload_1 }}" target="_blank">Doc 1</a><br>
+                            {% endif %}
+                            {% if activity.document_upload_2 %}
+                                <a href="{{ activity.document_upload_2.url }}" target="_blank">Doc 2</a><br>
+                            {% endif %}
+                            {% if activity.document_upload_3 %}
+                                <a href="{{ activity.document_upload_3.url }}" target="_blank">Doc 3</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if activity.lms_links1 %}
+                                <a href="{{ activity.lms_links1 }}" target="_blank">Link 1</a><br>
+                            {% endif %}
+                            {% if activity.lms_links2 %}
+                                <a href="{{ activity.lms_links2 }}" target="_blank">Link 2</a><br>
+                            {% endif %}
+                            {% if activity.lms_links3 %}
+                                <a href="{{ activity.lms_links3 }}" target="_blank">Link 3</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            <button type="submit" class="download-btn" name="download_csv">Download</button>
+        </form>
+    </div>
+    {% else %}
+    {% endif %}
+</body>
+</html>

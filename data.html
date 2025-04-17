@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Faculty Login - PBL Activities</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+    
+    form {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    select, input {
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 2px solid green;
+      border-radius: 4px;
+      width: 100%;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: rgb(83, 255, 83);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 2px solid green;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #d4edda;
+    }
+    .button {
+      background-color: #d4edda;
+    }
+    .download-btn {
+      background-color: #b2a8f5;
+    }
+    .download-btn:hover {
+      background-color: #3EF625;
+    }
+    .edit-btn {
+      background-color: #ffa500;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+    }
+    .edit-btn:hover {
+      background-color: #ff7600;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 8px;
+      width: 50%;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: black;
+    }
+
+    .lms-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .lms-links input {
+      flex: 1;
+    }
+    .lms-links button {
+      padding: 5px 10px;
+    }
+    .remove {
+      background-color: #ff3333;
+      color: white;
+    }
+    .add-btn {
+      background-color: green;
+      color: white;
+    }
+
+    .document_upload_container {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .document_upload_container input[type="file"] {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .document_upload_single {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .document_upload_single input[type="file"] {
+      flex: 1;
+      min-width: 150px;
+      border: 2px solid green;
+      border-radius: 4px;
+      padding: 6px;
+    }
+
+    @media (max-width: 600px) {
+      form {
+        padding: 15px;
+      }
+      .document_upload_container,
+      .document_upload_single {
+        flex-direction: column;
+      }
+      .document_upload_container input[type="file"],
+      .document_upload_single input[type="file"] {
+        width: 100%;
+      }
+    }
+    .nav-buttons a {
+        background-color: white;
+        color: rgb(94, 146, 244);
+        padding: 8px 16px;
+        margin-left: 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.3s ease;
+    }
+    
+    .nav-buttons a:hover {
+        background-color: rgb(34, 34, 34);
+        color: white;
+    }
+    
+  </style>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.getElementById("academic_year").addEventListener("change", function () {
+        loadDropdown(`/get_schools/${this.value}/`, "school");
+      });
+      document.getElementById("school").addEventListener("change", function () {
+        loadDropdown(`/get_programs/${this.value}/`, "program");
+      });
+      document.getElementById("program").addEventListener("change", function () {
+        loadDropdown(`/get_facultys/${this.value}/`, "faculty");
+      });
+
+      const modal = document.getElementById("editModal");
+      const closeBtn = document.querySelector(".close");
+
+      window.openEditModal = function (id, pbl, other_activity, description, marks) {
+        document.getElementById("modalActivityId").value = id;
+        document.querySelector('input[name="activity_name"]').value = pbl;
+        document.querySelector('input[name="other_activity"]').value = other_activity || "N/A";
+        document.querySelector('input[name="description"]').value = description;
+        document.querySelector('input[name="marks"]').value = marks;
+        modal.style.display = "block";
+      };
+
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+      };
+
+      window.onclick = function (event) {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+    });
+
+    function loadDropdown(url, targetDropdown) {
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const dropdown = document.getElementById(targetDropdown);
+          dropdown.innerHTML = '<option value="" disabled selected>Select</option>';
+          data.forEach(item => {
+            dropdown.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+          });
+          dropdown.disabled = false;
+        })
+        .catch(error => console.error("Error loading dropdown:", error));
+    }
+
+    function addLMSLink() {
+      const container = document.getElementById("lms-links-container");
+      const newDiv = document.createElement("div");
+      newDiv.classList.add("lms-links");
+
+      const newInput = document.createElement("input");
+      newInput.type = "url";
+      newInput.name = "lms_links";
+      newInput.placeholder = "Enter LMS Submission Link";
+      newInput.required = true;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.textContent = "−";
+      removeBtn.classList.add("remove");
+      removeBtn.onclick = function () {
+        container.removeChild(newDiv);
+      };
+
+      newDiv.appendChild(newInput);
+      newDiv.appendChild(removeBtn);
+      container.appendChild(newDiv);
+    }
+  </script>
+</head>
+
+<body>
+    <div style="display: flex; justify-content: space-between; align-items: center; background-color: rgb(97, 157, 237); padding: 20px;">
+        <h1 style="margin: 0; color: white;">Experiential Learning Activity</h1>
+        <div class="nav-buttons">
+            <a href='home'>Home</a>
+            <a href="report">Report</a>
+        </div>
+    </div>
+    
+  
+  {% if messages %}
+    <ul style="max-width: 1000px; margin: 20px auto; list-style: none; padding: 0;">
+      {% for message in messages %}
+        <li style="background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 10px 15px; border-radius: 5px; margin-bottom: 10px;">
+          {{ message }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="academic_year">Academic Year:</label>
+    <select name="academic_year" id="academic_year">
+      <option value="" disabled selected>Select</option>
+      {% for year in academic_years %}
+        <option  value="{{ year.id }}">{{ year.name }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="school">School:</label>
+    <select name="school" id="school" disabled>
+      <option value="" disabled selected>Select</option>
+    </select>
+
+    <label for="program">Program:</label>
+    <select name="program" id="program" disabled>
+      <option value="" disabled selected>Select</option>
+    </select>
+
+    <label for="faculty">Faculty:</label>
+    <select name="faculty" id="faculty">
+      <option value="" disabled selected>Select</option>
+    </select>
+
+    <button type="submit">Show</button>
+  </form>
+
+  {% if filtered_activities %}
+    <div id="activity-form" class="form-section">
+      <form method="POST" action="">
+        <h2 align="center">Experiential Learning Activity List</h2>
+        {% csrf_token %}
+        <table>
+          <tr>
+            <th>Course</th>
+            <th>Activity Name</th>
+            <th>Other Activity Name</th>
+            <th>Activity Description</th>
+            <th>Activity Marks</th>
+            <th>Activity Opening Date</th>
+            <th>Activity Closing Date</th>
+            <th>Edit</th>
+          </tr>
+          {% for activity in filtered_activities %}
+          <tr>
+            <td>{{ activity.program }}</td>
+            <td>{{ activity.pbl }}</td>
+            <td>{{ activity.other_activity|default_if_none:"N/A" }}</td>
+            <td>{{ activity.description }}</td>
+            <td>{{ activity.marks }}</td>
+            <td>{{ activity.opening_date }}</td>
+            <td>{{ activity.closing_date }}</td>
+            <td>
+              <button type="button" class="edit-btn" onclick="openEditModal(
+                '{{ activity.id }}',
+                `{{ activity.pbl|escapejs }}`,
+                `{{ activity.other_activity|default_if_none:"N/A"|escapejs }}`,
+                `{{ activity.description|escapejs }}`,
+                '{{ activity.marks }}'
+              )">Edit</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </form>
+    </div>
+  {% else %}
+    <p style="text-align: center; color: black; font-size: 20px; font-weight: bold;">No activities found!</p>
+  {% endif %}
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Edit Activity</h3>
+      <form method="POST" action="/update_activity/" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="activity_id" id="modalActivityId" />
+
+        <label>Activity Name:</label>
+        <input type="text" name="activity_name" required />
+
+        <label>Other Activity:</label>
+        <input type="text" name="other_activity" />
+
+        <label>Description:</label>
+        <input type="text" name="description" />
+
+        <h3>UPLOAD Activity Document</h3>
+        <p style="color: red; font-size: small;">* Kindly upload PDF files only:</p>
+        <div class="document_upload_single">
+          <input type="file" id="activitydocument" name="activitydocument" accept=".pdf" required>
+        </div>
+
+        <h3>UPLOAD (BEST 3 Experiential Learning Activity)</h3>
+        <p style="color: red; font-size: small;">* Kindly upload PDF files only:</p>
+        <div class="document_upload_container">
+          <input type="file" name="document_upload_1" accept=".pdf" required>
+          <input type="file" name="document_upload_2" accept=".pdf" required>
+          <input type="file" name="document_upload_3" accept=".pdf" required>
+        </div>
+
+        <label for="marks">Experiential Learning Activity Marks:</label>
+        <br>
+        <input type="number" name="marks" placeholder="Enter Experiential Learning Activity Marks" required>
+
+        <label for="lms_links">LMS Link of submission:</label>
+        <p style="color: red; font-size: small;">* Only Five link can be added:</p>
+        <div id="lms-links-container">
+          <div class="lms-links">
+            <input type="url" name="lms_links" placeholder="Enter LMS Submission Link" required>
+            <button type="button" class="add-btn" onclick="addLMSLink()">+</button>
+          </div>
+        </div>
+
+        <br>
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+</body>
+</html>
